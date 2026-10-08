@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="lv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>StudyCore</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Just+Another+Hand&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+<style>
+:root{
+ --bg:#131047; --bg2:#1b1856; --surface:#a6abe3; --surface-soft:rgba(166,171,227,.14); --ink:#211f57;
+ --text:#f4f3fb; --muted:#9a97c9; --line:rgba(166,171,227,.22);
+ --accent:#52d9c9; --accent-soft:rgba(82,217,201,.16);
+ --good:#34d399; --good-soft:rgba(52,211,153,.16); --good-ink:#0b2e22;
+ --bad:#e0396b; --bad-soft:rgba(224,57,107,.18);
+ --mark:#ffc857; --mark-soft:rgba(255,200,87,.16);
+ box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:
+ radial-gradient(1000px 550px at 20% -15%,color-mix(in srgb,var(--accent) 14%,transparent),transparent 60%),var(--bg);
+ color:var(--text);font-family:-apple-system,"Segoe UI",Roboto,system-ui,sans-serif;line-height:1.55}
+.wrap{max-width:820px;margin:0 auto;padding:16px 16px 60px}
+header{--tail-top:62px;position:sticky;top:env(safe-area-inset-top,0px);z-index:9;padding:16px 0 10px;margin-bottom:6px;display:flex;align-items:center;gap:10px;transition:background .2s}
+.logo-wrap{position:relative;flex:1;display:flex;align-items:center;height:44px;min-width:0}
+.logo{font-family:'Just Another Hand',cursive;font-size:2.8rem;line-height:1;font-weight:400;color:var(--text);white-space:nowrap;position:relative;z-index:1}
+.logo span{display:inline-block}
+.logo-tail{position:absolute;right:0;height:2px;background:var(--text);top:var(--tail-top);border-radius:999px}
+.icon-btn{border:0;background:var(--surface);color:var(--ink);border-radius:999px;padding:9px 16px;font-size:.9rem;cursor:pointer;font-family:inherit;font-weight:700}
+.swatch{width:30px;height:30px;border-radius:50%;border:2px solid var(--line);cursor:pointer;padding:0;box-shadow:0 0 0 3px var(--accent-soft)}
+.deckbar{display:flex;gap:8px;overflow-x:auto;padding:4px 0 14px;margin-bottom:4px}
+.chip{flex:none;padding:8px 14px;border-radius:999px;border:1px solid var(--line);background:var(--surface-soft);color:var(--text);font-family:inherit;font-size:.88rem;cursor:pointer;display:flex;align-items:center;gap:7px}
+.chip .dot{width:9px;height:9px;border-radius:50%}
+.chip[aria-current="true"]{background:var(--surface);color:var(--ink);font-weight:700;border-color:transparent}
+.chip.add{border-style:dashed;color:var(--muted)}
+h2{font-size:1.2rem;margin:20px 0 8px;color:var(--accent);font-weight:700}
+h3{font-size:1rem;margin:16px 0 6px;font-weight:700}
+p{margin:6px 0}
+ul{padding-left:1.15rem;margin:6px 0}
+li{margin:2px 0;border-radius:8px;padding:3px 6px;margin-left:-6px;cursor:pointer;transition:background .12s}
+li:hover{background:var(--surface-soft)}
+li.hlon{background:var(--mark-soft);box-shadow:inset 3px 0 0 var(--mark)}
+.card-box{background:var(--bg2);border:1px solid var(--line);border-radius:16px;padding:13px 16px;margin:10px 0}
+.muted{color:var(--muted);font-size:.87rem}
+.hint{color:var(--muted);font-size:.82rem;margin:2px 0 10px}
+.toprow{display:flex;align-items:center;gap:8px;margin:6px 0 14px;flex-wrap:wrap}
+.segment{display:flex;gap:3px;background:var(--surface-soft);border-radius:999px;padding:4px;flex:1}
+.tab{flex:1;padding:9px;border:0;background:transparent;color:var(--text);border-radius:999px;font-family:inherit;font-size:.9rem;cursor:pointer;font-weight:700}
+.tab[aria-selected="true"]{background:var(--surface);color:var(--ink)}
+.backicon{border:0;background:var(--surface-soft);color:var(--text);border-radius:50%;width:38px;height:38px;font-size:1rem;cursor:pointer;flex:none}
+.scorepill{border:1px solid var(--line);background:var(--bg2);color:var(--text);border-radius:999px;padding:9px 15px;font-size:.85rem;font-weight:700;cursor:pointer;flex:none}
+.modes{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:6px 0 14px}
+.mode-btn{padding:20px 14px;border:0;background:var(--surface);color:var(--ink);border-radius:18px;font-family:inherit;cursor:pointer;text-align:center}
+.mode-btn b{display:block;font-size:1rem;margin-bottom:3px}
+.mode-btn span{font-size:.8rem;opacity:.75}
+.mode-btn.wide{grid-column:1/-1}
+.bar{height:7px;background:var(--line);border-radius:999px;overflow:hidden;margin:4px 0 2px}
+.bar>i{display:block;height:100%;background:var(--accent)}
+.study-row{display:flex;gap:14px;align-items:stretch;flex-wrap:wrap}
+.qcard{flex:1 1 260px;border:0;border-radius:20px;background:var(--bg2);padding:26px 20px;min-height:150px;display:flex;flex-direction:column;justify-content:center;position:relative;transition:background .25s,color .25s}
+.qcard.good{background:var(--good);color:var(--good-ink)}
+.qcard.bad{background:var(--bad);color:#fff}
+.tag{font-size:.72rem;color:inherit;opacity:.65;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;text-align:center}
+.qtext{font-size:1.2rem;font-weight:700;text-align:center;white-space:pre-line;letter-spacing:-.01em}
+.opt-col{flex:1 1 220px;display:flex;flex-direction:column;gap:9px}
+.opt{padding:14px 16px;border:1px solid var(--line);border-radius:14px;background:var(--surface-soft);color:var(--text);font-family:inherit;font-size:.92rem;text-align:left;cursor:pointer;line-height:1.3}
+.tf-row{display:flex;flex-direction:column;gap:9px}
+.tf-row button{padding:15px;border-radius:14px;border:1px solid var(--line);background:var(--surface-soft);color:var(--text);font-family:inherit;font-size:.98rem;font-weight:700;cursor:pointer;text-align:left}
+.correctPick{background:var(--good) !important;border-color:var(--good) !important;color:var(--good-ink) !important;font-weight:700}
+.wrongPick{background:var(--bad) !important;border-color:var(--bad) !important;color:#fff !important;font-weight:700}
+.correctHint{border-color:var(--good) !important;color:var(--good) !important}
+.answer-box{margin-top:14px;background:var(--good-soft);border-radius:14px;padding:12px 14px;font-size:1rem;text-align:center}
+.ansPill{width:100%;border:1px solid var(--line);border-radius:999px;padding:14px 18px;font-family:inherit;font-size:1rem;background:var(--surface-soft);color:var(--text)}
+.progress{display:flex;justify-content:space-between;font-size:.83rem;color:var(--muted);margin-bottom:10px}
+.empty{text-align:center;color:var(--muted);padding:40px 12px}
+.linkbtn{background:none;border:0;color:var(--accent);text-decoration:underline;cursor:pointer;font-family:inherit;font-size:.9rem;padding:6px 0}
+.palette{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
+.pal{width:30px;height:30px;border-radius:50%;border:2px solid transparent;cursor:pointer}
+.pal[aria-current="true"]{border-color:var(--text)}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:20;padding:16px}
+.sheet{background:var(--bg2);border:1px solid var(--line);border-radius:20px;padding:18px;max-width:360px;width:100%}
+.sheet h3{margin-top:0}
+input[type=color]{font-family:inherit}
+.hide{display:none}
+.foot{margin-top:26px;font-size:.8rem;color:var(--muted);text-align:center}
+.hlbox{background:var(--bg2);border:1px solid var(--line);border-radius:16px;padding:13px 16px;margin:10px 0}
+.hlbox li{list-style:none;margin-left:0;padding:6px 8px;font-size:.9rem}
+.pillbtn{width:100%;padding:14px;border:0;border-radius:999px;background:var(--surface);color:var(--ink);font-family:inherit;font-weight:700;font-size:.98rem;cursor:pointer;margin-top:14px}
+.pillbtn:disabled{opacity:.55;cursor:default}
+@media(max-width:640px){.study-row{flex-direction:column}}
+mark.hl-yellow{background:#ffc857;color:#2a2205;border-radius:3px}
+mark.hl-green{background:#34d399;color:#06281c;border-radius:3px}
+mark.hl-pink{background:#f28cc9;color:#3a0f28;border-radius:3px}
+mark.hl-blue{background:#6c8cff;color:#0c1540;border-radius:3px}
+mark.hlmk{cursor:pointer;padding:0 1px}
+.hl-popup{position:fixed;z-index:30;background:var(--bg2);border:1px solid var(--line);border-radius:999px;padding:6px;display:flex;gap:6px;box-shadow:0 10px 30px rgba(0,0,0,.4)}
+.hl-popup button{width:26px;height:26px;border-radius:50%;border:2px solid transparent;cursor:pointer;padding:0}
+.hl-popup button[data-c="yellow"]{background:#ffc857}
+.hl-popup button[data-c="green"]{background:#34d399}
+.hl-popup button[data-c="pink"]{background:#f28cc9}
+.hl-popup button[data-c="blue"]{background:#6c8cff}
+.hl-popup button.rm{background:var(--bad);color:#fff;font-weight:700;font-size:.7rem;width:auto;padding:0 10px;border-radius:999px}
+.dropzone{border:2px dashed var(--line);border-radius:20px;padding:34px 16px;text-align:center;color:var(--muted);margin:10px 0;transition:border-color .15s,background .15s}
+.dropzone.over{border-color:var(--accent);background:var(--accent-soft)}
+.levelrow{display:flex;gap:8px;margin:4px 0 16px}
+.levelrow button{flex:1;padding:10px 6px;border:1px solid var(--line);background:var(--surface-soft);color:var(--text);border-radius:12px;font-family:inherit;font-size:.85rem;cursor:pointer;font-weight:700}
+.levelrow button[aria-current="true"]{background:var(--surface);color:var(--ink)}
+.typecheck{display:flex;align-items:center;gap:10px;padding:13px 14px;border:1px solid var(--line);border-radius:14px;background:var(--surface-soft);margin:8px 0;cursor:pointer}
+.typecheck input{width:18px;height:18px;accent-color:var(--accent)}
+.countrow{display:flex;align-items:center;gap:10px;margin:14px 0}
+.countrow input{width:80px;border:1px solid var(--line);border-radius:10px;padding:9px;background:var(--surface-soft);color:var(--text);font-family:inherit;font-size:1rem}
+.flip-scene{perspective:1400px;flex:1 1 260px}
+.flip-card{position:relative;width:100%;min-height:220px;transition:transform .5s;transform-style:preserve-3d}
+.flip-card.flipped{transform:rotateY(180deg)}
+.flip-face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:20px;padding:22px 20px;display:flex;flex-direction:column;justify-content:center}
+.flip-front{background:var(--bg2)}
+.flip-front.good{background:var(--good);color:var(--good-ink)}
+.flip-front.bad{background:var(--bad);color:#fff}
+.flip-back{background:var(--bg2);border:1px solid var(--line);transform:rotateY(180deg);overflow-y:auto;text-align:left;justify-content:flex-start}
+.flip-card:not(.flipped) .flip-back{pointer-events:none}
+.flip-card.flipped .flip-front{pointer-events:none}
+.flip-back b{color:var(--accent)}
+.flip-back .sec{margin:9px 0}
+.deckbar{scrollbar-width:thin;scrollbar-color:var(--line) transparent}
+@media(min-width:900px){
+ .wrap{max-width:min(1500px,96vw)}
+ #root{display:grid;grid-template-columns:230px 1fr;gap:22px;align-items:start}
+ .deckbar{flex-direction:column;overflow-x:visible;overflow-y:auto;padding:4px 0;margin:0;position:sticky;top:96px;max-height:calc(100vh - 120px)}
+ .chip{width:100%;border-radius:14px;text-align:left;overflow-wrap:anywhere}
+}
+
+ html,*{scrollbar-width:thin;scrollbar-color:rgba(166,171,227,.35) transparent}
+ ::-webkit-scrollbar{width:8px;height:8px}
+ ::-webkit-scrollbar-track{background:transparent}
+ ::-webkit-scrollbar-thumb{background:rgba(166,171,227,.35);border-radius:999px}
+ ::-webkit-scrollbar-thumb:hover{background:rgba(166,171,227,.55)}
+ ::-webkit-scrollbar-button{display:none}
+
+ .backbox{border:1px solid var(--line);background:var(--surface-soft);color:var(--text);border-radius:999px;padding:10px 18px;font-family:inherit;font-size:.9rem;font-weight:700;cursor:pointer;margin-bottom:6px}
+
+ input[type=number]{-moz-appearance:textfield;appearance:textfield}
+ input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+ .countrow input{text-align:center}
+ .stepbtn{width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:var(--surface-soft);color:var(--text);font-size:1.2rem;font-weight:700;cursor:pointer;font-family:inherit;padding:0;flex:none}
+ 
+ header::before{content:"";position:absolute;top:0;bottom:0;left:50%;width:100vw;margin-left:-50vw;z-index:-1;pointer-events:none;background:transparent;transition:background .2s,box-shadow .2s}
+ header.stuck::before{background:rgba(19,16,71,.88);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);box-shadow:0 1px 0 var(--line)}
+ body{overflow-x:clip}
+
+ body{min-height:100vh;background-repeat:no-repeat;background-attachment:fixed}
+
+ .konsp-layout{display:grid;grid-template-columns:minmax(0,1fr);gap:14px}
+.hl-legend{order:-1;background:var(--bg2);border:1px solid var(--line);border-radius:16px;padding:12px 14px;align-self:start}
+.hl-legend h3{margin:0 0 8px}
+.hl-items{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.hl-item{background:var(--surface-soft);border-radius:12px;padding:6px 8px}
+.hl-row{display:flex;align-items:center;gap:8px;cursor:pointer}
+.hl-name{flex:1;font-weight:700;font-size:.88rem}
+.hl-dot{width:14px;height:14px;border-radius:50%;flex:none}
+.hl-dot.hl-yellow{background:#ffc857}
+.hl-dot.hl-green{background:#34d399}
+.hl-dot.hl-pink{background:#f28cc9}
+.hl-dot.hl-blue{background:#6c8cff}
+.hl-edit,.hl-del,.hl-clear{border:0;background:none;color:var(--muted);cursor:pointer;font-size:.85rem;padding:0 2px;font-family:inherit}.hl-snips{display:none;margin:6px 0 2px;padding:0;list-style:none;max-height:180px;overflow-y:auto}
+.hl-snips{display:none;margin:6px 0 2px;padding:0;list-style:none;max-height:180px;overflow-y:auto}
+.hl-item.open .hl-snips{display:block}
+.hl-snip{display:flex;gap:6px;align-items:flex-start;font-size:.8rem;padding:3px 0;margin:0;cursor:default}
+.hl-snip:hover{background:none}
+.hl-snip span{flex:1;overflow-wrap:anywhere}
+@media(min-width:1150px){
+ .konsp-layout{grid-template-columns:minmax(0,1fr) 240px;align-items:start}
+ .hl-legend{order:0;position:sticky;top:96px}
+ .hl-items{grid-template-columns:1fr}
+}
+
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+ <div class="logo-wrap" id="logoWrap"><span class="logo"><span id="logoPre">Stud</span><span id="logoY">y</span><span id="logoPost">Core</span><i id="logoBase" style="display:inline-block;width:0;height:0"></i></span></div>
+ <button class="swatch" id="swBtn" title="Krāsa" style="background:var(--accent)"></button>
+ <button class="icon-btn" id="addBtn" title="Pievienot PDF">+ PDF</button>
+ <span class="logo-tail" id="logoTail"></span>
+</header>
+<input type="file" id="fileInput" accept="application/pdf" multiple style="display:none">
+<div id="root"></div>
+<p class="foot">Kartītes veido automātiski no PDF teksta, pēc noteikumiem, ne ar mākslīgo intelektu — pārbaudiet svarīgāko ar oriģinālu.</p>
+</div>
+<div id="overlayRoot"></div>
+
+<script>
+"use strict";
+pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js";
+
+/* ============================================================ palīgfunkcijas */
+function $(id){return document.getElementById(id);}
+function esc(s){return (s||"").replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));}
+function uid(){return Math.random().toString(36).slice(2,10);}
+function store(k,v){try{localStorage.setItem(k,v);}catch(e){}}
+function load(k){try{return localStorage.getItem(k);}catch(e){return null;}}
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function cap1(s){return s?s.charAt(0).toUpperCase()+s.slice(1):s;}
+const PALETTE=["#f78a8a","#f5bf89","#f5f08a","#bff589","#89f589","#89f5bf","#89f5f5","#89bff5","#8989f5","#bf89f5","#f589f5","#f589bf"];
+function hueFor(name){let h=0;for(let i=0;i<name.length;i++)h=(h*31+name.charCodeAt(i))>>>0;return PALETTE[h%PALETTE.length];}
+
+/* ============================================================ latviešu teksta analīze */
+const STOP=new Set("un vai ar par no uz pie pēc pirms bez kā ka ir bija būs tiek tika kas tas tā šis šī šie šīs ko kur kad lai arī bet jo nav esot esam esat viņš viņa mēs jūs es tu mans tavs var tiem tām tos tās ļoti tikai vēl jau nekā tāpēc kurš kura kuri kuras savu savas savs the a an and or of to in on at for with is are was were".split(" "));
+const SVARIGI=["svarīg","jāņem vērā","noteikum","nozīmē","tiek saukts","definē","vienmēr","nekad","obligāt","jāatceras","izņēmum","atšķir"];
+const RE_GADS=/\b(?:1[0-9]{3}|20[0-9]{2})\b/;
+const RE_DATUMS=/\b\d{1,2}[./]\d{1,2}[./]\d{2,4}\b/;
+const RE_SKAITLIS=/\d[\d\s.,]*\s?(?:%|°C|km|kg|cm|mm|ml|Hz|eiro|EUR|miljon\w*|miljard\w*|milj\.?|tūkstoš\w*|tūkst\.?)/;
+const RE_JEBKADS_SKAITLIS=new RegExp(RE_GADS.source+"|"+RE_DATUMS.source+"|"+RE_SKAITLIS.source);
+const RE_DEF_DASH=/^(.{3,45}?)\s*[\u2013\u2014-]\s+(.{15,170})$/;
+const RE_DEF_COLON=/^(.{3,45}?):\s+(.{15,170})$/;
+const DEF_VERBI="ir|nozīmē|tiek saukts|tiek saukta|tiek saukti|sauc par|apzīmē";
+const RE_DEF_SENT=new RegExp("^(.{3,45}?)\\s+(?:"+DEF_VERBI+")\\s+(.{15,170})$");
+const RE_AVOTS=/https?:|www\.|Izmantotie avoti|Izmantotā literatūra/i;
+const NEDEF_SAKUMS=new Set("tas tā tie tās šis šī šie šīs viņš viņa kas ja jo taču bet tātad tāpēc this that it they there he she piemērs piemēram svarīgi piezīme uzdevums note example".split(" "));
+
+function words(t){return (t.toLowerCase().match(/[^\W\d_]{3,}/gu)||[]).filter(w=>!STOP.has(w));}
+function sentences(t){t=(t||"").replace(/\s+/g," ").trim();if(!t)return[];return t.split(/(?<=[.!?])\s+(?=[A-ZĀČĒĢĪĶĻŅŠŪŽ0-9"„])/).map(s=>s.trim()).filter(s=>s.length>=25&&s.length<=360&&!RE_AVOTS.test(s));}
+
+function stripDiacritics(s){
+ return (s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+}
+function normStrict(s){
+ return stripDiacritics((s||"").toLowerCase()).replace(/[^\p{L}\p{N}\s]/gu,"").replace(/\s+/g," ").trim();
+}
+function levenshtein(a,b){
+ const m=a.length,n=b.length;
+ if(!m)return n; if(!n)return m;
+ let prev=new Array(n+1); for(let j=0;j<=n;j++)prev[j]=j;
+ for(let i=1;i<=m;i++){
+  const cur=[i];
+  for(let j=1;j<=n;j++){
+   cur[j]=Math.min(prev[j]+1,cur[j-1]+1,prev[j-1]+(a[i-1]===b[j-1]?0:1));
+  }
+  prev=cur;
+ }
+ return prev[n];
+}
+function stem(w){return w.length<=4?w:w.slice(0,Math.max(4,Math.ceil(w.length*0.65)));}
+function answerMatches(user,correct){
+ const u=normStrict(user),c=normStrict(correct);
+ if(!u)return false;
+ if(u===c)return true;
+ const cw=c.split(" ").filter(Boolean);
+ if(cw.length<=4){
+  const tol=Math.max(1,Math.floor(c.length/5.5));
+  return levenshtein(u,c)<=tol;
+ }
+ const uStems=new Set(u.split(" ").filter(Boolean).map(stem));
+ const need=cw.map(stem);
+ const hit=need.filter(s=>uStems.has(s)).length;
+ return need.length>0&&(hit/need.length)>=0.7;
+}
+function classifyAnswer(a){
+ if(RE_DATUMS.test(a))return "date";
+ if(RE_GADS.test(a)||/\d/.test(a))return "number";
+ return "word";
+}
+
+/* ============================================================ PDF -> sadaļas (ar lappusēm katrai rindai) */
+function lappusuDiapazons(txt,kopa){
+ if(!txt)return range0(kopa);
+ let[a,,b]=txt.partition?txt.partition("-"):txt.split(/-(.*)/);
+ a=Math.max(parseInt(txt.split("-")[0])||1,1);
+ b=Math.min(parseInt(txt.split("-")[1])||a,kopa);
+ return range0(kopa).filter(i=>i+1>=a&&i+1<=b);
+}
+function range0(n){const r=[];for(let i=0;i<n;i++)r.push(i);return r;}
+
+async function pdfToSections(file){
+ const buf=await file.arrayBuffer();
+ const pdf=await pdfjsLib.getDocument({data:buf}).promise;
+ const lines=[]; // {text,size,page}
+ for(let p=1;p<=pdf.numPages;p++){
+  const page=await pdf.getPage(p);
+  const tc=await page.getTextContent();
+  const rows=new Map();
+  tc.items.forEach(it=>{
+   if(!it.str.trim()&&it.str!==" ")return;
+   const size=Math.hypot(it.transform[2],it.transform[3])||10;
+   const y=Math.round(it.transform[5]/3)*3;
+   const key=y;
+   if(!rows.has(key))rows.set(key,{items:[]});
+   rows.get(key).items.push({x:it.transform[4],w:it.width||0,s:it.str,size});
+  });
+  Array.from(rows.values()).forEach(r=>{
+   r.items.sort((a,b)=>a.x-b.x);
+   let text="",prevEnd=null,sizeSum=0;
+   r.items.forEach(it=>{
+    if(prevEnd!==null&&it.x-prevEnd>1.2&&!text.endsWith(" ")&&!/^[.,;:!?)\]]/.test(it.s))text+=" ";
+    text+=it.s; prevEnd=it.x+it.w; sizeSum+=it.size;
+   });
+   if(text.trim())lines.push({text:text.replace(/\s+/g," ").trim(),size:sizeSum/r.items.length,page:p});
+  });
+ }
+ if(!lines.length)return[];
+ const sizes=lines.map(l=>l.size).sort((a,b)=>a-b);
+ const med=sizes[Math.floor(sizes.length/2)]||10;
+ const RE_NUM_HEAD=/^\d+(\.\d+)*\.?\s+\S/;
+ const sections=[{nos:"Ievads",lpp:lines[0].page,rows:[]}];
+ lines.forEach(l=>{
+  const t=l.text.trim();
+  if(!t||/^[\d\s.\-]+$/.test(t))return;
+  const bigEnough=l.size>=med*1.22&&t.length<=110&&t.length>=3;
+  const allCaps=t===t.toUpperCase()&&/[A-ZĀČĒĢĪĶĻŅŠŪŽ]/.test(t)&&t.length<=70&&t.length>=4;
+  const numbered=RE_NUM_HEAD.test(t)&&t.length<=90;
+  if(bigEnough||allCaps||numbered){
+   const nos=t.replace(/^\d+(\.\d+)*\.?\s*/,"");
+   const cur=sections[sections.length-1];
+   if(!cur.rows.length&&cur.nos!=="Ievads")cur.nos+=" "+nos;
+   else if(!cur.rows.length)cur.nos=nos;
+   else sections.push({nos,lpp:l.page,rows:[]});
+  } else {
+   sections[sections.length-1].rows.push({text:t,page:l.page});
+  }
+ });
+ return sections.filter(s=>s.rows.map(r=>r.text).join(" ").length>=50);
+}
+
+/* teksts ar saglabātām lappusēm, lai katram teikumam var atrast tā lappusi */
+function pagedJoin(rows){
+ let text="",marks=[];
+ rows.forEach(r=>{
+  marks.push({idx:text.length,page:r.page});
+  text+=r.text+" ";
+ });
+ return {text,marks};
+}
+function pageAt(marks,idx){
+ let p=marks.length?marks[0].page:1;
+ for(const m of marks){ if(m.idx<=idx)p=m.page; else break; }
+ return p;
+}
+
+/* ============================================================ definīciju un faktu izvilkšana (visam dokumentam) */
+function extractDefinitions(section){
+ const defs=[],seen=new Set();
+ function add(term,def,page){
+  term=term.replace(/^\d+(\.\d+)*\.?\s*/,"").trim(" •-–—");
+  const p0=term.toLowerCase().split(" ")[0]||"";
+  if(!term||term.split(" ").length>6||NEDEF_SAKUMS.has(p0)||seen.has(term.toLowerCase())||/\d/.test(term)||RE_AVOTS.test(def))return;
+  seen.add(term.toLowerCase());
+  defs.push({term,def:def.trim(),page,sentence:term+" – "+def.trim()});
+ }
+ section.rows.forEach(r=>{
+  const m=r.text.match(RE_DEF_DASH)||r.text.match(RE_DEF_COLON);
+  if(m)add(m[1],m[2],r.page);
+ });
+ const {text,marks}=pagedJoin(section.rows);
+ sentences(text).forEach(sent=>{
+  const m=sent.match(RE_DEF_SENT);
+  if(m){const idx=text.indexOf(sent);add(m[1],m[2],pageAt(marks,idx<0?0:idx));}
+ });
+ return defs;
+}
+function extractFacts(section,usedSentences){
+ const {text,marks}=pagedJoin(section.rows);
+ const facts=[];
+ sentences(text).forEach(sent=>{
+  if(usedSentences.has(sent))return;
+  const m=sent.match(RE_JEBKADS_SKAITLIS);
+  if(m){
+   const idx=text.indexOf(sent);
+   facts.push({sentence:sent,value:m[0].trim(),page:pageAt(marks,idx<0?0:idx),mstart:m.index,mlen:m[0].length});
+  }
+ });
+ return facts;
+}
+
+/* ============================================================ konspekta veidošana (ar detalizācijas līmeni) */
+const LEVELS={detaliz:{lo:.40,hi:.50,label:"Detalizēts"},videj:{lo:.20,hi:.30,label:"Vidējs"},iss:{lo:.10,hi:.15,label:"Īss"}};
+function scoreSentence(sent,i,total,freq,defSentences){
+ if(defSentences.has(sent))return 999; // definīcijas vienmēr iekšā
+ const tv=words(sent); if(!tv.length)return -99;
+ let p=tv.reduce((a,w)=>a+(freq.get(w)||0),0)/Math.pow(tv.length,0.7);
+ const low=sent.toLowerCase();
+ if(RE_DEF_SENT.test(sent))p+=4;
+ if(/\*\*/.test(sent))p+=2;
+ if(RE_JEBKADS_SKAITLIS.test(sent))p+=2;
+ p+=2*SVARIGI.filter(k=>low.includes(k)).length;
+ if(i===0||i===total-1)p+=1.5;
+ if(sent.length<40||sent.length>300)p-=2;
+ return p;
+}
+function buildConspect(section,levelKey){
+ const lvl=LEVELS[levelKey]||LEVELS.detaliz;
+ const {text,marks}=pagedJoin(section.rows);
+ const sents=sentences(text);
+ const defs=extractDefinitions(section);
+ const defSentences=new Set(defs.map(d=>d.sentence));
+ const freq=new Map(); words(text).forEach(w=>freq.set(w,(freq.get(w)||0)+1));
+ const scored=sents.map((s,i)=>({s,i,score:scoreSentence(s,i,sents.length,freq,defSentences)}));
+ const budget=Math.max(Math.ceil(sents.length*lvl.hi), sents.length?2:0);
+ const guaranteedMin=Math.min(sents.length,2);
+ let chosen=scored.slice().sort((a,b)=>b.score-a.score).slice(0,Math.max(budget,guaranteedMin));
+ // garantija: ja nekas nav izvēlēts, ņem pirmos guaranteedMin
+ if(!chosen.length&&sents.length)chosen=scored.slice(0,guaranteedMin);
+ chosen=chosen.sort((a,b)=>a.i-b.i);
+ const bullets=chosen.map(c=>{
+  const idx=text.indexOf(c.s);
+  return {text:c.s,page:pageAt(marks,idx<0?0:idx),isDef:defSentences.has(c.s)};
+ });
+ return {bullets,defs};
+}
+function boldify(txt,defs){
+ let out=esc(txt);
+ const terms=defs.map(d=>d.term).sort((a,b)=>b.length-a.length);
+ terms.forEach(t=>{
+  const re=new RegExp("("+t.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+")","i");
+  out=out.replace(re,"<b>$1</b>");
+ });
+ out=out.replace(RE_JEBKADS_SKAITLIS,m=>"<b>"+m+"</b>");
+ return out;
+}
+
+/* ============================================================ jautājumu izveide (tikai no definīcijām un faktiem) */
+function buildItemPool(sections){
+ const items=[]; const usedDefSentences=new Set();
+ sections.forEach((s,si)=>{
+  const defs=extractDefinitions(s);
+  defs.forEach(d=>usedDefSentences.add(d.sentence));
+  defs.forEach(d=>items.push({id:uid(),kind:"def",term:d.term,answer:d.def,sentence:d.sentence,page:d.page,sec:si,category:"word"}));
+  const facts=extractFacts(s,usedDefSentences);
+  facts.forEach(f=>items.push({id:uid(),kind:"fact",term:null,answer:f.value,sentence:f.sentence,page:f.page,sec:si,category:classifyAnswer(f.value)}));
+ });
+ return items;
+}
+function makeWritten(item){
+ if(item.kind==="def")return {qtype:"written",itemId:item.id,q:"Kas ir "+item.term+"?",a:item.answer,sentence:item.sentence,page:item.page,sec:item.sec};
+ const idx=item.sentence.indexOf(item.answer);
+ const q=idx<0?item.sentence:item.sentence.slice(0,idx)+"______"+item.sentence.slice(idx+item.answer.length);
+ return {qtype:"written",itemId:item.id,q,a:item.answer,sentence:item.sentence,page:item.page,sec:item.sec};
+}
+function makeChoice(item,pool){
+ const cat=item.category;
+ const sameCat=pool.filter(x=>x.id!==item.id&&x.category===cat);
+ if(sameCat.length<3)return null;
+ const seen=new Set([item.answer.trim().toLowerCase()]);
+ const wrong=[];
+ shuffle(sameCat).forEach(x=>{const k=x.answer.trim().toLowerCase();if(!seen.has(k)&&wrong.length<3){seen.add(k);wrong.push(x.answer);}});
+ if(wrong.length<3)return null;
+ const q=item.kind==="def"?"Kas ir "+item.term+"?":item.sentence.replace(item.answer,"______");
+ return {qtype:"choice",itemId:item.id,q,a:item.answer,options:shuffle([item.answer,...wrong]),sentence:item.sentence,page:item.page,sec:item.sec};
+}
+function makeTF(item,pool){
+ const cat=item.category;
+ const sameCat=pool.filter(x=>x.id!==item.id&&x.category===cat&&x.answer.trim().toLowerCase()!==item.answer.trim().toLowerCase());
+ const makeFalse=Math.random()<0.5&&sameCat.length>0;
+ let shown=item.sentence,isTrue=true;
+ if(makeFalse){
+  const alt=sameCat[Math.floor(Math.random()*sameCat.length)];
+  shown=item.sentence.split(item.answer).join(alt.answer);
+  isTrue=false;
+ }
+ return {qtype:"tf",itemId:item.id,q:shown,a:isTrue,sentence:item.sentence,page:item.page,sec:item.sec,trueAnswerText:item.sentence};
+}
+function generateQuestions(pool,types,maxCount){
+ const all=[];
+ pool.forEach(item=>{
+  if(types.written)all.push(makeWritten(item));
+  if(types.choice){const c=makeChoice(item,pool); if(c)all.push(c);}
+  if(types.tf){const t=makeTF(item,pool); if(t)all.push(t);}
+ });
+ const shuffled=shuffle(all);
+ const avail=shuffled.length;
+ const picked=shuffled.slice(0,Math.min(maxCount,avail));
+ return {questions:picked,available:avail};
+}
+
+/* ============================================================ stāvoklis / glabāšana */
+let decks=[]; let active=null; let view={screen:"library"}; let deckTabIndex=0;
+let studySession=null;
+try{decks=JSON.parse(load("sc_decks")||"[]");}catch(e){decks=[];}
+function saveDecks(){store("sc_decks",JSON.stringify(decks));}
+function getDeck(){return decks.find(d=>d.id===active);}
+
+/* ============================================================ augšupielāde (+ drag&drop) */
+async function processFiles(fileList){
+ const files=Array.from(fileList||[]);
+ for(const f of files){
+  if(!/\.pdf$/i.test(f.name)){continue;}
+  root().innerHTML='<div class="empty">Apstrādā "'+esc(f.name)+'"…<br><span class="muted">tas var aizņemt līdz minūtei</span></div>';
+  try{
+   const sections=await pdfToSections(f);
+   if(!sections.length){alert('Neizdevās nolasīt tekstu no "'+f.name+'". Fails var būt tukšs, bojāts vai skenēts attēls bez teksta (tam vajadzīga OCR, kas šajā versijā nav iebūvēta).');continue;}
+   const pool=buildItemPool(sections);
+   const deck={id:uid(),name:f.name.replace(/\.pdf$/i,""),color:hueFor(f.name+Date.now()),
+    sections:sections.map(s=>({nos:s.nos,lpp:s.lpp,rows:s.rows.slice(0,400)})),
+    pool,marks:[],level:"detaliz",studyTypes:{written:true,choice:true,tf:true},studyCount:Math.min(pool.length*2,30),
+    lastResult:null,created:Date.now()};
+   decks.push(deck); active=deck.id;
+  }catch(err){alert('Kļūda lasot "'+f.name+'": '+err.message);}
+ }
+ saveDecks(); view={screen:"deck"}; deckTabIndex=0; render();
+}
+$("addBtn").onclick=()=>$("fileInput").click();
+$("fileInput").onchange=e=>{processFiles(e.target.files); e.target.value="";};
+["dragenter","dragover"].forEach(ev=>window.addEventListener(ev,e=>{
+ if(!e.dataTransfer||!Array.from(e.dataTransfer.types||[]).includes("Files"))return;
+ e.preventDefault(); const dz=$("dz"); if(dz)dz.classList.add("over");
+}));
+["dragleave","drop"].forEach(ev=>window.addEventListener(ev,e=>{
+ const dz=$("dz"); if(dz)dz.classList.remove("over");
+}));
+window.addEventListener("drop",e=>{
+ if(!e.dataTransfer)return; e.preventDefault();
+ if(e.dataTransfer.files&&e.dataTransfer.files.length)processFiles(e.dataTransfer.files);
+});
+
+/* ============================================================ krāsu izvēle (mapes) */
+$("swBtn").onclick=()=>{
+ const d=getDeck();
+ const cur=d?d.color:getComputedStyle(document.documentElement).getPropertyValue("--accent").trim();
+ $("overlayRoot").innerHTML=`<div class="overlay" id="ov"><div class="sheet">
+  <h3>Izvēlies krāsu</h3>
+  <div class="palette">${PALETTE.map(c=>`<button class="pal" style="background:${c}" data-c="${c}" aria-current="${c===cur}"></button>`).join("")}</div>
+  <input type="color" id="customColor" value="${cur.length===7?cur:'#52d9c9'}" style="width:100%;height:40px;border:1px solid var(--line);border-radius:10px;margin-top:6px">
+  <p class="muted" style="margin-top:10px">${d?'Šī krāsa attieksies uz "'+esc(d.name)+'".':'Izvēlies mapi, lai mainītu tās krāsu.'}</p>
+ </div></div>`;
+ $("ov").onclick=ev=>{if(ev.target.id==="ov")$("overlayRoot").innerHTML="";};
+ $("overlayRoot").querySelectorAll(".pal").forEach(b=>b.onclick=()=>{setColor(b.dataset.c);});
+ $("customColor").oninput=ev=>setColor(ev.target.value);
+};
+function setColor(c){const d=getDeck();if(d){d.color=c;saveDecks();}document.documentElement.style.setProperty("--accent",c);$("overlayRoot").innerHTML="";render();}
+
+/* ============================================================ galvenā renderēšana */
+function root(){return $("root");}
+function render(){
+ const d=getDeck();
+ if(d)document.documentElement.style.setProperty("--accent",d.color);
+ if($("swBtn"))$("swBtn").style.background=d?d.color:"#52d9c9";
+ let html='<div class="deckbar">';
+ decks.forEach(x=>{html+=`<button class="chip" data-deck="${x.id}" aria-current="${x.id===active}"><span class="dot" style="background:${x.color}"></span>${esc(x.name)}</button>`;});
+ html+='<button class="chip add" id="chipAdd">+ Jauns fails</button></div>';
+ root().innerHTML=html+"<div id='body'></div>";
+ root().querySelectorAll("[data-deck]").forEach(b=>b.onclick=()=>{active=b.dataset.deck;view={screen:"deck"};deckTabIndex=0;render();});
+ $("chipAdd").onclick=()=>$("fileInput").click();
+ if(!d){renderLibraryEmpty();return;}
+ if(view.screen==="deck")renderDeckHome(d);
+ else if(view.screen==="study")renderStudy(d);
+}
+function renderLibraryEmpty(){
+ $("body").innerHTML=`<div class="dropzone" id="dz"><b>${decks.length?'Izvēlies mapi augšā':'Ievelc PDF šeit'}</b><br><span class="muted">vai spied “+ PDF” augšā</span></div>`;
+}
+
+/* ============================================================ Konspekts: iezīmēšana ar krāsu */
+function escRe(s){return s.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");}
+function computeBoldRanges(text,defs){
+ const ranges=[];
+ defs.forEach(d=>{const idx=text.indexOf(d.term); if(idx>=0)ranges.push({start:idx,end:idx+d.term.length,type:"b"});});
+ const re=new RegExp(RE_JEBKADS_SKAITLIS.source,"g"); let m;
+ while((m=re.exec(text))){ranges.push({start:m.index,end:m.index+m[0].length,type:"b"});}
+ return ranges;
+}
+function computeMarkRanges(text,marks){
+ const ranges=[];
+ marks.forEach(mk=>{let idx=0,f;while((f=text.indexOf(mk.text,idx))>=0){ranges.push({start:f,end:f+mk.text.length,type:"mk",color:mk.color,id:mk.id});idx=f+mk.text.length;}});
+ return ranges;
+}
+function renderBulletHTML(text,defs,marks){
+ const markR=computeMarkRanges(text,marks);
+ const boldR=computeBoldRanges(text,defs).filter(b=>!markR.some(m=>b.start<m.end&&b.end>m.start));
+ const all=[...markR,...boldR].sort((a,b)=>a.start-b.start||(b.end-b.start)-(a.end-a.start));
+ const final=[]; let lastEnd=-1;
+ all.forEach(r=>{if(r.start>=lastEnd){final.push(r);lastEnd=r.end;}});
+ let out="",pos=0;
+ final.forEach(r=>{
+  out+=esc(text.slice(pos,r.start));
+  const inner=esc(text.slice(r.start,r.end));
+  out+= r.type==="mk" ? `<mark class="hlmk hl-${r.color}" data-mid="${r.id}">${inner}</mark>` : `<b>${inner}</b>`;
+  pos=r.end;
+ });
+ out+=esc(text.slice(pos));
+ return out;
+}
+function closeHlPopup(){const p=$("hlPopup"); if(p)p.remove();}
+function showHlPopup(x,y,ctx){
+ closeHlPopup();
+ const pop=document.createElement("div");
+ pop.className="hl-popup"; pop.id="hlPopup";
+ pop.style.left=Math.max(8,Math.min(window.innerWidth-170,x-80))+"px";
+ pop.style.top=Math.max(8,y-46)+"px";
+ pop.innerHTML=HL_COLORS.map(c=>`<button data-c="${c}" title="${esc(hlLabel(getDeck(),c))}"></button>`).join("")+(ctx.mode==="edit"?`<button class="rm">Noņemt</button>`:"");
+ document.body.appendChild(pop);
+ pop.querySelectorAll("[data-c]").forEach(b=>b.onclick=ev=>{ev.stopPropagation();applyHl(ctx,b.dataset.c);closeHlPopup();});
+ const rm=pop.querySelector(".rm"); if(rm)rm.onclick=ev=>{ev.stopPropagation();removeHl(ctx);closeHlPopup();};
+ setTimeout(()=>document.addEventListener("click",closeHlPopup,{once:true}),0);
+}
+function applyHl(ctx,color){
+ const d=getDeck(); if(!d)return;
+ if(ctx.mode==="edit"){const m=d.marks.find(x=>x.id===ctx.id); if(m)m.color=color;}
+ else {d.marks.push({id:uid(),text:ctx.text,color});}
+ saveDecks(); renderDeckHome(d);
+}
+function removeHl(ctx){
+ const d=getDeck(); if(!d)return;
+ if(ctx.mode==="edit"){d.marks=d.marks.filter(x=>x.id!==ctx.id); saveDecks(); renderDeckHome(d);}
+}
+function wireHighlighting(d){
+ const wrap=$("konspektText"); if(!wrap)return;
+ wrap.onmouseup=wrap.ontouchend=()=>{
+  setTimeout(()=>{
+   const sel=window.getSelection();
+   if(!sel||sel.isCollapsed)return;
+   const txt=sel.toString().trim();
+   if(txt.length<2||txt.length>300)return;
+   if(!wrap.contains(sel.anchorNode))return;
+   const r=sel.getRangeAt(0).getBoundingClientRect();
+   showHlPopup(r.left+r.width/2,r.top,{mode:"new",text:txt});
+  },10);
+ };
+ wrap.querySelectorAll("mark.hlmk").forEach(mk=>{
+  mk.onclick=ev=>{ev.stopPropagation();const r=mk.getBoundingClientRect();showHlPopup(r.left+r.width/2,r.top,{mode:"edit",id:mk.dataset.mid});};
+ });
+}
+
+/* ============================================================ Konspekts: detalizācijas līmenis + attēlojums */
+const HL_COLORS=["yellow","green","pink","blue"];
+const HL_DEFAULT={yellow:"Jāmācās",green:"Zinu",pink:"Grūti",blue:"Svarīgi"};
+function hlLabel(d,c){return (d&&d.hlLabels&&d.hlLabels[c])||HL_DEFAULT[c];}
+function renderLegend(d){
+ return `<aside class="hl-legend"><h3>Iezīmes</h3><div class="hl-items">`+HL_COLORS.map(c=>{
+  const items=d.marks.filter(m=>m.color===c);
+  return `<div class="hl-item"><div class="hl-row"><span class="hl-dot hl-${c}"></span><span class="hl-name">${esc(hlLabel(d,c))}</span><span class="muted">${items.length}</span><button class="hl-edit" data-c="${c}" title="Pārdēvēt">✎</button>${items.length?`<button class="hl-clear" data-c="${c}" title="Noņemt visas">🗑</button>`:""}</div>`+
+   `<ul class="hl-snips">${items.length?items.map(m=>`<li class="hl-snip"><span>${esc(m.text)}</span><button class="hl-del" data-mid="${m.id}" title="Noņemt">✕</button></li>`).join(""):'<li class="hl-snip muted">Nav iezīmju</li>'}</ul></div>`;
+ }).join("")+`</div><p class="hint" style="margin-top:8px">Atzīmē tekstu konspektā, lai iekrāsotu.</p></aside>`;
+}
+function wireLegend(d){
+ document.querySelectorAll(".hl-row").forEach(r=>r.onclick=()=>r.parentElement.classList.toggle("open"));
+ document.querySelectorAll(".hl-edit").forEach(b=>b.onclick=ev=>{
+  ev.stopPropagation();
+  const c=b.dataset.c, v=prompt("Iezīmes nosaukums:",hlLabel(d,c));
+  if(v&&v.trim()){d.hlLabels=d.hlLabels||{};d.hlLabels[c]=v.replace(/["<>]/g,"").trim().slice(0,20);saveDecks();renderDeckHome(d);}
+ });
+ document.querySelectorAll(".hl-del").forEach(b=>b.onclick=()=>{
+  d.marks=d.marks.filter(m=>m.id!==b.dataset.mid);saveDecks();renderDeckHome(d);
+ });
+}
+
+function renderKonspekts(d){
+ const allDefs=[];
+ let html=`<div class="konsp-layout"><div class="konsp-main"><div class="levelrow">${Object.keys(LEVELS).map(k=>`<button data-lvl="${k}" aria-current="${d.level===k}">${LEVELS[k].label}</button>`).join("")}</div>`;
+ html+='<div id="konspektText">';
+ d.sections.forEach(s=>{
+  const {bullets,defs}=buildConspect(s,d.level);
+  allDefs.push(...defs);
+  if(!bullets.length)return;
+  html+=`<div class="card-box"><h3>${esc(s.nos)}</h3><ul>`;
+  bullets.forEach(b=>{
+   html+=`<li style="cursor:text"><span>${renderBulletHTML(b.text,defs,d.marks)}</span> <span class="muted">(lpp. ${b.page})</span></li>`;
+  });
+  html+="</ul></div>";
+ });
+ if(allDefs.length){
+  html+=`<div class="card-box"><h3>Galvenie jēdzieni</h3><ul>`+
+   allDefs.map(dd=>`<li style="cursor:text"><b>${esc(dd.term)}:</b> ${esc(dd.def)} <span class="muted">(lpp. ${dd.page})</span></li>`).join("")+
+   `</ul></div>`;
+ }
+ html+="</div>";
+ if(!d.sections.some(s=>buildConspect(s,d.level).bullets.length))html+='<div class="empty">Šajā PDF neizdevās atrast pietiekami daudz strukturēta teksta.</div>';
+ return html+"</div>"+renderLegend(d)+"</div>";
+}
+
+/* ============================================================ Mācīšanās: tipu/skaita izvēle */
+function renderMaciesanas(d){
+ const avail=generateQuestions(d.pool,d.studyTypes,99999).available;
+ return `
+ <p class="hint">Izvēlies jautājumu veidus un skaitu. Pieejamas <b>${avail}</b> kartītes no šī PDF.</p>
+ <label class="typecheck"><input type="checkbox" id="tyWritten" ${d.studyTypes.written?"checked":""}> Rakstiskā atbilde</label>
+ <label class="typecheck"><input type="checkbox" id="tyChoice" ${d.studyTypes.choice?"checked":""}> Izvēle ar 4 variantiem</label>
+ <label class="typecheck"><input type="checkbox" id="tyTf" ${d.studyTypes.tf?"checked":""}> Pareizi / nepareizi</label>
+ <div class="countrow"><span>Jautājumu skaits:</span><button class="stepbtn" id="cntMinus" type="button">−</button><input type="number" id="countBox" min="1" max="${Math.max(avail,1)}" value="${Math.min(d.studyCount,Math.max(avail,1))}"><button class="stepbtn" id="cntPlus" type="button">+</button></div>
+ <button class="pillbtn" id="startBtn">Sākt mācīšanos</button>
+ ${d.lastResult?`<p class="muted" style="margin-top:14px">Pēdējais rezultāts: <b>${d.lastResult.percent}%</b></p>`:""}`;
+}
+function wireMaciesanas(d){
+ function upd(){
+  d.studyTypes={written:$("tyWritten").checked,choice:$("tyChoice").checked,tf:$("tyTf").checked};
+  const avail=generateQuestions(d.pool,d.studyTypes,99999).available;
+  const hint=$("pMacities").querySelector(".hint");
+  if(hint)hint.innerHTML=`Izvēlies jautājumu veidus un skaitu. Pieejamas <b>${avail}</b> kartītes no šī PDF.`;
+  $("countBox").max=Math.max(avail,1);
+  if(+$("countBox").value>avail)$("countBox").value=Math.max(avail,1);
+ }
+ ["tyWritten","tyChoice","tyTf"].forEach(id=>$(id).onchange=upd);
+ $("countBox").oninput=()=>{d.studyCount=Math.max(1,+$("countBox").value||1);saveDecks();};
+ function step(n){const b=$("countBox");const max=+b.max||1;b.value=Math.min(max,Math.max(1,(+b.value||1)+n));b.oninput();}
+ $("cntMinus").onclick=()=>step(-1);
+ $("cntPlus").onclick=()=>step(1);
+ $("startBtn").onclick=()=>{
+  if(!d.studyTypes.written&&!d.studyTypes.choice&&!d.studyTypes.tf){alert("Izvēlies vismaz vienu jautājumu veidu.");return;}
+  const {questions,available}=generateQuestions(d.pool,d.studyTypes,d.studyCount);
+  if(!questions.length){alert("Šim PDF neizdevās izveidot nevienu jautājumu (nav pietiekami daudz definīciju vai faktu).");return;}
+  if(questions.length<d.studyCount)alert("Šim PDF varēja izveidot tikai "+questions.length+" kartītes (pieprasīts "+d.studyCount+").");
+  saveDecks();
+  startSession(questions);
+ };
+}
+
+/* ============================================================ deck home (cilnes) */
+function scoreFrac(d){return d.lastResult?d.lastResult.percent+"%":"–";}
+function renderDeckHome(d){
+ d.marks=d.marks||[];
+ $("body").innerHTML=`
+ <div class="toprow">
+  <div class="segment"><button class="tab" id="t1" aria-selected="true">Konspekts</button><button class="tab" id="t2" aria-selected="false">Mācīšanās</button></div>
+  <button class="scorepill" id="scoreBtn" title="Pēdējais rezultāts">${scoreFrac(d)}</button>
+ </div>
+ <div id="pKonspekts">${renderKonspekts(d)}</div>
+ <div id="pMacities" class="hide">${renderMaciesanas(d)}</div>`;
+ const panels=["pKonspekts","pMacities"],tabs=["t1","t2"];
+ function showTab(i){deckTabIndex=i;tabs.forEach((t,j)=>$(t).setAttribute("aria-selected",j===i?"true":"false"));panels.forEach((p,j)=>$(p).classList.toggle("hide",j!==i));}
+ $("t1").onclick=()=>showTab(0); $("t2").onclick=()=>showTab(1);
+ showTab(Math.min(deckTabIndex,1));
+ $("scoreBtn").onclick=()=>{};
+ root().querySelectorAll("[data-lvl]").forEach(b=>b.onclick=()=>{d.level=b.dataset.lvl;saveDecks();$("pKonspekts").innerHTML=renderKonspekts(d);wireHighlighting(d);root().querySelectorAll("[data-lvl]").forEach(x=>x.setAttribute("aria-current",x.dataset.lvl===d.level));});
+ wireHighlighting(d);
+ wireMaciesanas(d);
+}
+/* ============================================================ mācīšanās sesija */
+function pointsForAttempt(n){const T=[100,80,60,40,20];return T[Math.min(n,5)-1];}
+function startSession(questions){
+ const itemsByQid={}; const queue=[];
+ questions.forEach(q=>{const qid=q.itemId+"_"+q.qtype; itemsByQid[qid]=q; queue.push(qid);});
+ studySession={itemsByQid,queue:shuffle(queue),pos:0,attempts:{},resolved:{},perc:{},totalAttempts:0,totalCompleted:0,
+  cur:{qid:null,phase:"asking",picked:null,writtenVal:""}};
+ studySession.cur.qid=studySession.queue[0];
+ view={screen:"study"}; render();
+}
+function uniqueCount(ss){return Object.keys(ss.itemsByQid).length;}
+function advanceToNext(){
+ const ss=studySession;
+ ss.pos++;
+ while(ss.pos<ss.queue.length&&ss.resolved[ss.queue[ss.pos]])ss.pos++;
+ if(ss.pos>=ss.queue.length){
+  const d=getDeck();
+  const percent=Math.round(Object.values(ss.perc).reduce((a,b)=>a+b,0)/(uniqueCount(ss)*100)*100);
+  if(d){d.lastResult={percent,count:uniqueCount(ss),attempts:ss.totalAttempts,date:Date.now()};saveDecks();}
+  ss.cur={qid:null,phase:"done"};
+ } else {
+  ss.cur={qid:ss.queue[ss.pos],phase:"asking",picked:null,writtenVal:""};
+ }
+ render();
+}
+function requeueCard(qid){
+ const ss=studySession;
+ const insertAt=Math.min(ss.queue.length,ss.pos+1+3+Math.floor(Math.random()*3));
+ ss.queue.splice(insertAt,0,qid);
+}
+function submitAnswer(ok){
+ const ss=studySession; const qid=ss.cur.qid;
+ ss.attempts[qid]=(ss.attempts[qid]||0)+1; ss.totalAttempts++;
+ if(ok){
+  ss.perc[qid]=pointsForAttempt(ss.attempts[qid]); ss.resolved[qid]=true; ss.totalCompleted++;
+  ss.cur.phase="correct"; render();
+  setTimeout(()=>{if(studySession===ss)advanceToNext();},700);
+ } else {
+  ss.cur.phase="wrongflash"; render(); requeueCard(qid);
+  setTimeout(()=>{if(studySession===ss){ss.cur.phase="flipped";render();}},500);
+ }
+}
+function renderStudy(d){
+ const ss=studySession;
+ if(!ss){view={screen:"deck"};render();return;}
+ if(ss.cur.phase==="done"){renderSessionDone(d,ss);return;}
+ const q=ss.itemsByQid[ss.cur.qid];
+ const phase=ss.cur.phase;
+ const frontBadGood=phase==="correct"?" good":(phase==="wrongflash"||phase==="flipped")?" bad":"";
+ let frontInner="",sideInner="";
+ const typeLabel={written:"Rakstiskā atbilde",choice:"Izvēle ar 4 variantiem",tf:"Pareizi / nepareizi"}[q.qtype];
+ if(q.qtype==="written"){
+  const disabled=phase!=="asking";
+  frontInner=`<div class="tag">${typeLabel}</div><div class="qtext">${esc(q.q)}</div>
+   <input type="text" class="ansPill" id="ansBox" ${disabled?"disabled":""} placeholder="Ieraksti atbildi…" value="${esc(ss.cur.writtenVal||"")}" style="margin-top:16px">
+   ${phase==="asking"?'<button class="pillbtn" id="checkBtn">Pārbaudīt</button>':""}`;
+ } else if(q.qtype==="choice"){
+  frontInner=`<div class="tag">${typeLabel}</div><div class="qtext">${esc(q.q)}</div>`;
+  sideInner=q.options.map(o=>{
+   let cls="opt";
+   if(phase!=="asking"){ if(o===ss.cur.picked&&o===q.a)cls+=" correctPick"; else if(o===ss.cur.picked)cls+=" wrongPick"; else if(o===q.a)cls+=" correctHint"; }
+   return `<button class="${cls}" data-opt="${esc(o)}" ${phase!=="asking"?"disabled":""}>${esc(o)}</button>`;
+  }).join("");
+ } else { // tf
+  frontInner=`<div class="tag">${typeLabel}</div><div class="qtext">${esc(q.q)}</div>`;
+  sideInner=["true","false"].map(v=>{
+   const val=v==="true"; const label=val?"Pareizi":"Nepareizi"; let cls="";
+   if(phase!=="asking"){ if(ss.cur.picked===val&&val===q.a)cls=" correctPick"; else if(ss.cur.picked===val)cls=" wrongPick"; else if(val===q.a)cls=" correctHint"; }
+   return `<button class="${cls}" data-tf="${v}" ${phase!=="asking"?"disabled":""}>${label}</button>`;
+  }).join("");
+  sideInner=`<div class="tf-row">${sideInner}</div>`;
+ }
+ const backInner=`
+  <div class="sec"><b>Jautājums:</b><br>${esc(q.q.replace(/______/,"…"))}</div>
+  <div class="sec"><b>Pareizā atbilde:</b><br>${q.qtype==="tf"?(q.a?"Patiess apgalvojums":"Aplams — pareizi: "+esc(q.trueAnswerText)):esc(cap1(q.a))}</div>
+  ${q.qtype==="written"?`<div class="sec"><b>Tava atbilde:</b><br>${esc(cap1(ss.cur.writtenVal||""))}</div>`:""}
+  <div class="sec"><b>Skaidrojums:</b><br>${esc(q.sentence)} <span class="muted">(lpp. ${q.page})</span></div>
+  <div class="rowbtns"><button class="pillbtn" id="nextBtn" style="margin-top:0">Tālāk</button></div>`;
+ $("body").innerHTML=`
+ <div class="toprow">
+  <button class="backicon" id="backBtn">↩</button>
+  <div class="segment" style="flex:none;padding:9px 16px"><span style="font-weight:700;font-size:.9rem">Mācīšanās</span></div>
+  <button class="scorepill" id="scoreBtn">${ss.totalCompleted}/${ss.totalAttempts}</button>
+ </div>
+ <div class="progress"><span>atlikušas ${uniqueCount(ss)-ss.totalCompleted} / ${uniqueCount(ss)}</span></div>
+ <div class="study-row">
+  <div class="flip-scene"><div class="flip-card${phase==="flipped"?" flipped":""}" id="flipCard">
+   <div class="flip-face flip-front${frontBadGood}">${frontInner}</div>
+   <div class="flip-face flip-back">${backInner}</div>
+  </div></div>
+  ${sideInner?`<div class="opt-col">${sideInner}</div>`:""}
+ </div>`;
+ $("backBtn").onclick=()=>{studySession=null;view={screen:"deck"};render();};
+ if(q.qtype==="written"&&phase==="asking"){
+  const box=$("ansBox");
+  box.oninput=()=>{
+   const pos=box.selectionStart;
+   const fixed=cap1(box.value);
+   if(fixed!==box.value){box.value=fixed; box.setSelectionRange(pos,pos);}
+   ss.cur.writtenVal=box.value;
+  };
+  box.focus();
+  $("checkBtn").onclick=()=>{const ok=answerMatches(box.value,q.a); submitAnswer(ok);};
+  box.onkeydown=e=>{if(e.key==="Enter")$("checkBtn").click();};
+ }
+ if(q.qtype==="choice"&&phase==="asking"){
+  root().querySelectorAll("[data-opt]").forEach(b=>b.onclick=()=>{ss.cur.picked=b.dataset.opt; submitAnswer(b.dataset.opt===q.a);});
+ }
+ if(q.qtype==="tf"&&phase==="asking"){
+  root().querySelectorAll("[data-tf]").forEach(b=>b.onclick=()=>{const val=b.dataset.tf==="true"; ss.cur.picked=val; submitAnswer(val===q.a);});
+ }
+ if(phase==="flipped"){
+  $("nextBtn").onclick=()=>advanceToNext();
+ }
+}
+function renderSessionDone(d,ss){
+ const percent=d.lastResult?d.lastResult.percent:0;
+ $("body").innerHTML=`
+  <button class="backbox" id="backBtn">← Atpakaļ uz mapi</button>
+  <div class="card-box" style="text-align:center">
+  <div class="muted">Sesija pabeigta! 🎉</div>
+  <div style="font-size:2.2rem;font-weight:700;color:var(--accent)">${percent}%</div>
+  <div class="bar"><i style="width:${percent}%"></i></div>
+  <div class="muted" style="margin-top:6px">${uniqueCount(ss)} kartītes, ${ss.totalAttempts} mēģinājumi</div>
+ </div>`;
+ $("backBtn").onclick=()=>{studySession=null;view={screen:"deck"};deckTabIndex=2;render();};
+}
+
+/* ============================================================ logo astes līnija */
+function positionLogoTail(){
+ const y=$("logoY"),tail=$("logoTail"),base=$("logoBase"),logo=document.querySelector(".logo"),hdr=document.querySelector("header");
+ if(!y||!tail||!base||!logo||!hdr)return;
+ const fs=parseFloat(getComputedStyle(logo).fontSize);
+ const u=fs/2048;
+ const yr=y.getBoundingClientRect(),hr=hdr.getBoundingClientRect(),baseY=base.getBoundingClientRect().top;
+ const START=-110;
+ const THICK=110;
+ const BOTTOM=670;
+ tail.style.left=Math.round(yr.left-hr.left+START*u)+"px";
+ tail.style.height=(THICK*u).toFixed(2)+"px";
+ tail.style.top=(baseY-hr.top+(BOTTOM-THICK)*u).toFixed(2)+"px";
+}
+window.addEventListener("resize",positionLogoTail);
+if(document.fonts&&document.fonts.ready){document.fonts.ready.then(positionLogoTail);}
+setTimeout(positionLogoTail,50); setTimeout(positionLogoTail,600);
+
+/* header fons tikai ritinot */
+function updateHeaderStuck(){const h=document.querySelector("header");if(h)h.classList.toggle("stuck",window.scrollY>6);}
+window.addEventListener("scroll",updateHeaderStuck,{passive:true});
+updateHeaderStuck();
+
+/* ============================================================ sākums */
+if(decks.length)active=decks[0].id;
+render();
+positionLogoTail();
+
+</script>
+</body>
+</html>
